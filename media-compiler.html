@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACP Media Companion | HTML5 ZIP-Media Compiler</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="jszip.min.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="glossary-hover.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="overall-title-banner" aria-label="Banner image placeholder"><img src="assets/banner.png" alt="Banner image placeholder" /></div>
+      <div class="header-top">
+        <div class="title-left-panel">
+          <h1>HTML5 ZIP-Media Compiler</h1>
+        </div>
+        <div class="header-actions">
+          <a class="page-link-btn" href="index.html" title="Open Prompting ACP to Add Media.">Prompting ACP to Add Media</a>
+          <a class="page-link-btn" href="instructions-using-sls-acp.html" title="Open Instructions using SLS's ACP.">Instructions using SLS's ACP</a>
+          <a class="page-link-btn" href="instructions-using-ai-chatbot.html" title="To be released">*Instructions using AI Chatbot</a>
+          <button id="previewBtn" type="button" class="preview-prominent" title="Open a live preview in a new window using the current editor content. Uploaded media files are not loaded in preview.">Preview Interactive</button>
+        </div>
+      </div>
+      <details class="how-to-use">
+        <summary>How to Use Quick Guide</summary>
+        <div class="workflow-map" role="tablist" aria-label="How to Use Steps">
+          <button id="stepTab1" class="workflow-step is-active" type="button" role="tab" aria-selected="true" aria-controls="stepPanel1" data-step-target="stepPanel1">1. Add Base Code</button>
+          <span class="workflow-link" aria-hidden="true">?</span>
+          <button id="stepTab2" class="workflow-step" type="button" role="tab" aria-selected="false" aria-controls="stepPanel2" data-step-target="stepPanel2">2. Add Media</button>
+          <span class="workflow-link" aria-hidden="true">?</span>
+          <button id="stepTab3" class="workflow-step" type="button" role="tab" aria-selected="false" aria-controls="stepPanel3" data-step-target="stepPanel3">3. Generate ZIP</button>
+        </div>
+
+        <div class="workflow-panels">
+          <section id="stepPanel1" class="workflow-panel is-active" role="tabpanel" aria-labelledby="stepTab1">
+            <p class="how-to-use-intro">Choose one method:</p>
+            <p>A) Upload an ACP-generated ZIP.</p>
+            <p>B) Upload <code>index.html</code>, <code>style.css</code>/<code>styles.css</code>, and <code>script.js</code> separately.</p>
+            <p>C) Paste specific code into editors.</p>
+            <p class="how-to-use-important">Important: Media paths must use the main folder filename only (for example, <code>image.png</code>).</p>
+          </section>
+
+          <section id="stepPanel2" class="workflow-panel" role="tabpanel" aria-labelledby="stepTab2" hidden>
+            <p class="how-to-use-intro">Upload your media files.</p>
+            <p>Add images, audio, or video files with the upload button or drag-and-drop.</p>
+            <p>Filenames are case-sensitive. <code>Image.png</code> must match <code>Image.png</code> exactly.</p>
+          </section>
+
+          <section id="stepPanel3" class="workflow-panel" role="tabpanel" aria-labelledby="stepTab3" hidden>
+            <p class="how-to-use-intro">Build your final project.</p>
+            <p>Click "Generate ZIP" to download the full project with all staged media files.</p>
+          </section>
+        </div>
+      </details>
+    </header>
+
+    <section class="panel code-panel">
+      <div class="section-header-row">
+        <h2>Code Input</h2>
+        <div class="controls-row">
+          <button id="uploadZipBtn" type="button" class="zip-prominent" title="Upload an ACP-generated project ZIP. The interactive imports index.html, style.css/styles.css, and script.js into editors, then stages all other files in the main folder.">Upload ACP Generated ZIP File</button>
+          <button id="clearCodeBtn" type="button" title="Clear all code in index.html, style.css, and script.js editors.">Clear Code</button>
+        </div>
+      </div>
+      <div class="editor-card single-editor-card">
+        <div class="editor-file-row">
+          <label class="field-label" for="codeFileSelect">Editing File</label>
+          <select id="codeFileSelect" class="code-file-select" aria-label="Choose file to edit">
+            <option value="index.html">index.html</option>
+            <option value="style.css">style.css</option>
+            <option value="script.js">script.js</option>
+          </select>
+        </div>
+        <div class="code-editor-wrap">
+          <pre id="codeHighlightLayer" class="code-highlight-layer" aria-hidden="true"></pre>
+          <textarea id="codeEditor" spellcheck="false" wrap="off" placeholder="Paste code here..."></textarea>
+        </div>
+        <div class="editor-upload-row">
+          <button id="uploadCodeBtn" type="button" class="editor-upload-btn" title="Upload a file to replace the currently selected editor file.">Upload Selected File</button>
+          <input id="codeFileInput" type="file" hidden />
+        </div>
+      </div>
+      <div id="assetPathChecker" class="asset-path-checker" aria-live="polite">
+        <h3>Main Folder Path Checker</h3>
+        <p class="checker-note">Detected media references appear below. Any media reference not in the main folder is flagged as an error.</p>
+        <div class="checker-grid">
+          <div class="checker-box">
+            <h4>Detected Media References</h4>
+            <ul id="pathSnippetList" class="checker-list">
+              <li class="muted">No media detected.</li>
+            </ul>
+          </div>
+          <div class="checker-box checker-box-error">
+            <h4>Errors (Fix Needed)</h4>
+            <ul id="pathErrorList" class="checker-list">
+              <li class="muted">No media detected.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="checker-manual-note">Manual fix required: Change any red-highlighted reference to use the main folder filename only:<br />Example in index.html: change &lt;img src="assets/image.jpg" /&gt; to &lt;img src="image.jpg" /&gt;.</p>
+      </div>
+    </section>
+
+    <section class="panel media-panel">
+      <div class="controls-row">
+        <button id="uploadBtn" type="button" class="media-prominent" title="Upload media files only (images, audio, and video). These files are added to the main folder in the generated ZIP.">Upload Media Files</button>
+        <button id="clearMediaBtn" type="button" title="Clear previously attached media files only.">Clear Media Files</button>
+        <input id="fileInput" type="file" multiple hidden />
+        <input id="zipInput" type="file" accept=".zip,application/zip" hidden />
+      </div>
+      <div id="dropZone" class="drop-zone" tabindex="0" aria-label="Drag and drop files">
+        Drag and drop media files here
+        <span>Supported media types: .jpg, .jpeg, .png, .gif, .webp, .svg, .mp3, .wav, .ogg, .m4a, .mp4, .webm, .mov.</span>
+      </div>
+
+      <div id="mediaNameChecker" class="asset-path-checker media-name-checker" aria-live="polite">
+        <h3>Media Files Name Checker</h3>
+        <p class="checker-note">Checks whether uploaded media filenames match filenames referenced in the uploaded codebase.</p>
+        <div class="checker-grid">
+          <div class="checker-box checker-box-error">
+            <h4>Missing / Mismatch</h4>
+            <ul id="mediaNameErrorList" class="checker-list">
+              <li class="muted">No checks run yet.</li>
+            </ul>
+          </div>
+          <div class="checker-box">
+            <h4>Matched Filenames</h4>
+            <ul id="mediaNameMatchList" class="checker-list">
+              <li class="muted">No checks run yet.</li>
+            </ul>
+          </div>
+        </div>
+        <p class="checker-manual-note">Manual fix required: rename and reupload the media file, or fix the filename error highlighted in red in the codebase above.</p>
+      </div>
+
+      <h3>Uploaded Files</h3>
+      <ul id="fileList" class="file-list">
+        <li class="muted">No files uploaded.</li>
+      </ul>
+    </section>
+
+    <section class="panel actions-panel">
+      <div class="controls-row">
+        <button id="generateBtn" type="button" class="primary generate-prominent" title="Build and download a ready-to-run ZIP containing index.html, style.css, script.js, and uploaded or imported media files in the main folder.">Generate ZIP</button>
+        <button id="resetBtn" type="button">Reset</button>
+      </div>
+      <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <footer class="page-credit">Created by Mathew Lim for the SLS Community</footer>
+</body>
+</html>
+

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACP Media Companion | Prompting ACP to Add Media</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="prompting-acp-media.js"></script>
+  <script defer src="glossary-hover.js"></script>
+</head>
+<body class="acp-prompts-page">
+  <main class="app acp-prompts-app">
+    <header class="app-header">
+      <div class="overall-title-banner" aria-label="Banner image placeholder"><img src="assets/banner.png" alt="Banner image placeholder" /></div>
+      <div class="header-top">
+        <h1>Prompting ACP to Add Media</h1>
+        <div class="header-actions">
+          <a class="page-link-btn" href="instructions-using-sls-acp.html" title="Open Instructions using SLS's ACP.">Instructions using SLS's ACP</a>
+          <a class="page-link-btn" href="media-compiler.html" title="Open HTML5 ZIP-Media Compiler.">HTML5 ZIP-Media Compiler</a>
+          <a class="page-link-btn" href="instructions-using-ai-chatbot.html" title="To be released">*Instructions using AI Chatbot</a>
+        </div>
+      </div>
+    </header>
+
+    <nav class="feature-nav" aria-label="Section navigation">
+      <label for="featureJump">Jump to Prompts:</label>
+      <select id="featureJump">
+        <option value="">Select a prompt</option>
+      </select>
+    </nav>
+
+    <section class="panel feature">
+      <h2>Basic Prompts for Adding Media Placeholders</h2>
+      <p>Instruction: Click "Copy Prompt," paste it into ACP (or any LLM), then refine or modify the prompt.</p>
+
+      <h3>1. Adding Image</h3>
+      <p class="prompt-line">Add an image placeholder to this interactive. Place the image in the main folder. Place all images in the main folder (same folder as index.html). Use this exact filename (case-sensitive):</p>
+      <p class="prompt-line"><code>heroimage.jpg</code></p>
+      <p class="prompt-line">Create a visible placeholder so I can add the actual image later.</p>
+      <p class="explanation-line"><strong>What this means:</strong> This prompt asks ACP to prepare a spot in your web page where a picture will go. You'll see a gray box or temporary image showing where your real picture will appear. The main folder is where your media files are stored for this setup.</p>
+
+      <h3>2. Adding Sound Effect</h3>
+      <p class="prompt-line">Add a sound effect to this <code>interactive</code>. Store the audio in the main folder (same folder as index.html). Use this exact filename (case-sensitive):</p>
+      <p class="prompt-line"><code>clicksound.mp3</code></p>
+      <p class="prompt-line">The sound should trigger when users interact with the element (e.g., clicking a button).</p>
+      <p class="explanation-line"><strong>What this means:</strong> This prompt adds a sound effect that will play when users interact with an existing element on your page (like clicking a button or card). An <code>interactive</code> refers to any element that responds to user actions - buttons, games, quizzes, or animations controlled by JavaScript code. The sound will be connected to the element in the code. Once you add your audio file with the exact filename, it will play automatically when the element is clicked or triggered.</p>
+
+      <h3>3. Adding Video</h3>
+      <p class="prompt-line">Add a video placeholder to this interactive. Place the video in the main folder (same folder as index.html). Use this exact filename (case-sensitive):</p>
+      <p class="prompt-line"><code>introvideo.mp4</code></p>
+      <p class="prompt-line">Create a visible placeholder so I can add the actual video later.</p>
+      <p class="explanation-line"><strong>What this means:</strong> This creates a video player area on your page. You'll see a rectangular box (often gray or with a play icon) showing where your video will appear. Once you add your actual video file with the exact name specified, it will automatically load into this space.</p>
+
+      <h3>4. Adding Background Audio</h3>
+      <p class="prompt-line">Add looping background music to this interactive.</p>
+      <p class="prompt-line">The audio file should be named <code>backgroundmusic.mp3</code> (using exact lowercase spelling) and placed in the main folder (same folder as index.html).</p>
+      <p class="prompt-line">The music should start playing when the user clicks the first icon.</p>
+      <p class="prompt-line">Include visible audio controls that allow the user to play or pause the music, mute or unmute the audio, and adjust the volume level.</p>
+      <p class="explanation-line"><strong>What this means:</strong> This sets up music that plays continuously in the background while users view your page. "Loop" means the music will restart automatically when it ends. The interactive will include a volume control (like a slider or mute button) so you can adjust the music volume directly within the interactive. Once you add your audio file with the exact filename, it will play automatically.</p>
+
+      <h3>Important Notes for All Prompts</h3>
+      <p><strong>Case-sensitive filenames:</strong> When you upload your files, the names must match EXACTLY - including capital and lowercase letters. For example, <code>backgroundmusic.mp3</code> is different from <code>BackgroundMusic.mp3</code>. If the names don't match perfectly, your media won't appear when uploaded to SLS.</p>
+      <p><strong>The main folder:</strong> Keep all media files (images, sounds, videos) in the same root folder as your <code>index.html</code>, <code>style.css</code>, and <code>script.js</code> files.</p>
+    </section>
+
+  </main>
+  <footer class="page-credit">Created by Mathew Lim for the SLS Community</footer>
+  <button id="backToTop" type="button" class="back-to-top" aria-label="Back to top">Top</button>
+</body>
+</html>
+
