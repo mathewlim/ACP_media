@@ -121,8 +121,8 @@ Guidance pages:
 
 - `prompting-acp-to-add-media.html`
 - `prompting-acp-media.js`
-- `instructions-using-sls-acp.html`
-- `instructions-using-sls-acp.js`
+- `guide-to-media-embedding.html`
+- `guide-to-media-embedding.js`
 - `instructions-using-ai-chatbot.html`
 
 ## Credits

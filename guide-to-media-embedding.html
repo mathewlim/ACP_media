@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACP Media Companion | Guide to Embedding Media in ACP's HTML5 Interactives</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="guide-to-media-embedding.js"></script>
+  <script defer src="glossary-hover.js"></script>
+</head>
+<body class="detailed-page">
+  <main class="app detailed-app">
+    <header class="app-header">
+      <div class="overall-title-banner" aria-label="Banner image placeholder"><img src="assets/banner.png" alt="Banner image placeholder" /></div>
+      <div class="header-top">
+        <h1>Guide to Embedding Media<br />in ACP's HTML5 Interactives</h1>
+        <div class="header-actions">
+          <a class="page-link-btn" href="index.html" title="Open Prompting ACP to Add Media.">Prompting ACP to Add Media</a>
+          <a class="page-link-btn" href="media-compiler.html" title="Open HTML5 ZIP-Media Compiler.">HTML5 ZIP-Media Compiler</a>
+          <a class="page-link-btn" href="instructions-using-ai-chatbot.html" title="To be released">*Guide to using AI Chatbot</a>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel flow-panel">
+      <div class="video-walkthrough">
+        <div class="video-step-bar" role="tablist" aria-label="Step video selection">
+          <button type="button" class="video-step-tab is-active" role="tab" aria-selected="true" data-video-target="videoPanel1">
+            <span class="step-tab-label">Step 1</span>
+            <span class="step-tab-summary">Draft ACP prompt and add Knowledge Base guidance.</span>
+          </button>
+          <button type="button" class="video-step-tab" role="tab" aria-selected="false" data-video-target="videoPanel3">
+            <span class="step-tab-label">Step 2</span>
+            <span class="step-tab-summary">Specify exact media filenames.</span>
+          </button>
+          <button type="button" class="video-step-tab" role="tab" aria-selected="false" data-video-target="videoPanel4">
+            <span class="step-tab-label">Step 3</span>
+            <span class="step-tab-summary">Generate, refine and finalize Interactive.</span>
+          </button>
+          <button type="button" class="video-step-tab" role="tab" aria-selected="false" data-video-target="videoPanel6">
+            <span class="step-tab-label">Step 4</span>
+            <span class="step-tab-summary">Download Interactive ZIP file.</span>
+          </button>
+          <button type="button" class="video-step-tab compiler-method" role="tab" aria-selected="false" data-video-target="videoPanel7">
+            <span class="step-tab-label">Step 5</span>
+            <span class="step-tab-summary">Upload ZIP file to HTML5 ZIP-Media Compiler.</span>
+          </button>
+          <button type="button" class="video-step-tab compiler-method" role="tab" aria-selected="false" data-video-target="videoPanel9">
+            <span class="step-tab-label">Step 6</span>
+            <span class="step-tab-summary">Upload media files to HTML5 ZIP-Media Compiler.</span>
+          </button>
+          <button type="button" class="video-step-tab compiler-method" role="tab" aria-selected="false" data-video-target="videoPanel10">
+            <span class="step-tab-label">Step 7</span>
+            <span class="step-tab-summary">Generate new ZIP file.</span>
+          </button>
+          <button type="button" class="video-step-tab" role="tab" aria-selected="false" data-video-target="videoPanel11">
+            <span class="step-tab-label">Step 8</span>
+            <span class="step-tab-summary">Upload ZIP and verify in SLS.</span>
+          </button>
+        </div>
+
+        <div class="video-step-panels">
+          <section id="videoPanel1" class="video-step-panel is-active" role="tabpanel">
+            <p>In SLS Authoring Copilot (ACP), write your prompt recipe for HTML5 interactive generation.</p>
+            <p>You may want to copy and paste teacher-created content and/or the codebase from an existing interactive (<code>index.html</code>, <code>style.css</code>, and <code>script.js</code>) into ACP's Knowledge Base to guide ACP in generating the interactive you want.</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-01.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel3" class="video-step-panel" role="tabpanel" hidden>
+            <p>In your ACP prompt, clearly specify the exact names of all media files to be added. Filenames are case-sensitive. For example:</p>
+            <ul>
+              <li><code>image.png</code></li>
+              <li><code>VideoClip.mp4</code></li>
+              <li><code>diagram01.jpg</code></li>
+            </ul>
+            <p>You can refer again to the prompts in the <a href="prompting-acp-to-add-media.html">Prompting ACP to Add Media</a> guide.</p>
+            <p>Ensure filenames in ACP exactly match the real media filenames, including capitalization.</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-02.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel4" class="video-step-panel" role="tabpanel" hidden>
+            <p>Let ACP generate your interactive, then iterate and refine your prompt until all required media placeholders are correctly included. When the ACP output meets your expectations, click <strong>Add</strong> to confirm the final version.</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-03.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel6" class="video-step-panel" role="tabpanel" hidden>
+            <p>Download the Interactive ZIP file from the bottom-right download button.</p>
+            <p>The ZIP file should contain these separate files:</p>
+            <ul>
+              <li><code>index.html</code></li>
+              <li><code>script.js</code></li>
+              <li><code>style.css</code></li>
+            </ul>
+            <p>Next step:</p>
+            <p>Option 1: Manual Method</p>
+            <ul>
+              <li>Unzip the ZIP file</li>
+              <li>Add your media files to the main folder</li>
+              <li>Test the interactive in your local browser to make sure your media files display and play correctly</li>
+              <li>Select all files and compress them into a new ZIP file</li>
+            </ul>
+            <p>Proceed to <strong>Step 8</strong> to upload the ZIP into the SLS component.</p>
+            <div class="compiler-help-note">
+              <p><strong>Option 2:</strong> If you are unsure how to unzip and zip files with the media files, or whether the media filenames are properly referenced to the codebase, follow <strong>Steps 5 to 7</strong> and use the HTML5 ZIP-Media Compiler to assist you.</p>
+            </div>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-04.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel7" class="video-step-panel" role="tabpanel" hidden>
+            <p>Upload the full ZIP file into the HTML5 ZIP-Media Compiler.</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-05.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel9" class="video-step-panel" role="tabpanel" hidden>
+            <p>Upload all media files referenced in your HTML5 files (images, audio, and video) to the HTML5 ZIP-Media Compiler.</p>
+            <p>Review and fix any media path or filename errors so they align with ACP placeholder references and use main folder filenames only (for example, <code>image.jpg</code>).</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-06.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel10" class="video-step-panel" role="tabpanel" hidden>
+            <p>In the HTML5 ZIP-Media Compiler, click <strong>Generate ZIP</strong> to download a new ZIP file containing <code>index.html</code>, <code>style.css</code>, <code>script.js</code>, and all uploaded media files in the main folder.</p>
+            <p>(You may unzip the ZIP file and test the interactive in your local browser to make sure your media files display and play correctly.)</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-07.mp4" type="video/mp4" />
+            </video>
+          </section>
+
+          <section id="videoPanel11" class="video-step-panel" role="tabpanel" hidden>
+            <p>Upload the new ZIP file into SLS's Text Media Component. Use the Add Media icon &#128206; and select Upload File. Then open the interactive inside SLS, try it out, and verify that all media were added correctly.</p>
+            <video class="instruction-video" controls loop preload="metadata">
+              <source src="assets/step-08.mp4" type="video/mp4" />
+            </video>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="page-credit">Created by Mathew Lim for the SLS Community</footer>
+</body>
+</html>
+
+
