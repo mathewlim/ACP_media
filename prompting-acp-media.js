@@ -20,6 +20,8 @@
       const target = document.getElementById(selectedId);
       if (!target) return;
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Reset so the same prompt can be chosen again after scrolling away.
+      featureJump.value = '';
     });
   }
 
@@ -34,6 +36,7 @@
     button.textContent = 'Copy Prompt';
     h3.appendChild(button);
 
+    button.setAttribute('aria-label', `Copy prompt: ${entry.label}`);
     button.addEventListener('click', async () => {
       const textToCopy = collectPromptBlockText(h3);
       if (!textToCopy) return;
@@ -42,9 +45,11 @@
   });
 
   if (backToTop) {
-    window.addEventListener('scroll', () => {
+    const updateBackToTop = () => {
       backToTop.style.display = window.scrollY > 320 ? 'inline-block' : 'none';
-    });
+    };
+    window.addEventListener('scroll', updateBackToTop, { passive: true });
+    updateBackToTop();
 
     backToTop.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,22 +78,32 @@
   async function copyText(content, button, doneLabel) {
     const originalLabel = button.textContent;
 
+    let copied = false;
     try {
       await navigator.clipboard.writeText(content);
-      button.textContent = doneLabel;
+      copied = true;
     } catch (_error) {
+      // Opened from a local file or blocked by the browser: use a hidden text box.
       const tempArea = document.createElement('textarea');
       tempArea.value = content;
+      tempArea.setAttribute('readonly', '');
+      tempArea.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
       document.body.appendChild(tempArea);
       tempArea.select();
-      document.execCommand('copy');
+      try {
+        copied = document.execCommand('copy');
+      } catch (_copyError) {
+        copied = false;
+      }
       document.body.removeChild(tempArea);
-      button.textContent = doneLabel;
+      button.focus({ preventScroll: true });
     }
 
-    setTimeout(() => {
+    button.textContent = copied ? doneLabel : 'Copy failed - select the text and press Ctrl+C';
+    clearTimeout(button.copyLabelTimer);
+    button.copyLabelTimer = setTimeout(() => {
       button.textContent = originalLabel;
-    }, 1200);
+    }, copied ? 1200 : 3500);
   }
 
   function groupPromptLines() {

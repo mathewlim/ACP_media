@@ -9,53 +9,108 @@
 
   const termPattern = /(?<![\w.])(index\.html|script\.js|style\.css|codebase|placeholder)(?![\w.])/gi;
   const testPattern = /index\.html|script\.js|style\.css|codebase|placeholder/i;
-  const blockedTags = new Set(["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT"]);
+  const blockedTags = new Set(["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT", "BUTTON", "SELECT", "OPTION", "PRE"]);
+
+  let tooltip = null;
+  let activeTerm = null;
 
   function injectStyles() {
     if (document.getElementById("glossary-hover-styles")) return;
 
     const style = document.createElement("style");
     style.id = "glossary-hover-styles";
+    // One shared, fixed-position tooltip: hidden tooltips no longer widen the
+    // page, and the tooltip is kept inside the screen near the edges.
     style.textContent = `
       .glossary-term {
-        position: relative;
         cursor: help;
         text-decoration: underline dotted rgba(173, 216, 255, 0.95);
         text-underline-offset: 0.14em;
       }
 
-      .glossary-term::after {
-        content: attr(data-glossary-definition);
-        position: absolute;
-        left: 0;
-        bottom: calc(100% + 8px);
+      .glossary-tooltip {
+        position: fixed;
         z-index: 999;
-        width: max-content;
-        max-width: min(360px, 82vw);
+        max-width: min(360px, calc(100vw - 16px));
         padding: 0.5rem 0.62rem;
         border-radius: 8px;
         border: 1px solid #6fbff0;
         background: #0b1b35;
         color: #eaf4ff;
         font-size: 0.86rem;
+        font-weight: 500;
         line-height: 1.35;
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-        white-space: normal;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(4px);
-        transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
         pointer-events: none;
       }
 
-      .glossary-term:hover::after {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
+      .glossary-tooltip[hidden] {
+        display: none;
       }
     `;
 
     document.head.appendChild(style);
+  }
+
+  function showTooltip(term) {
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.className = "glossary-tooltip";
+      tooltip.id = "glossary-tooltip";
+      tooltip.setAttribute("role", "tooltip");
+      document.body.appendChild(tooltip);
+    }
+    activeTerm = term;
+    tooltip.textContent = term.dataset.glossaryDefinition;
+    tooltip.hidden = false;
+
+    const gap = 8;
+    const rect = term.getBoundingClientRect();
+    const tip = tooltip.getBoundingClientRect();
+    const left = Math.min(Math.max(gap, rect.left), window.innerWidth - tip.width - gap);
+    let top = rect.top - tip.height - gap;
+    if (top < gap) top = rect.bottom + gap;
+    tooltip.style.left = `${Math.max(gap, left)}px`;
+    tooltip.style.top = `${top}px`;
+  }
+
+  function hideTooltip() {
+    activeTerm = null;
+    if (tooltip) tooltip.hidden = true;
+  }
+
+  function bindTooltipEvents() {
+    let lastPointerType = "mouse";
+    document.addEventListener("pointerdown", (event) => {
+      lastPointerType = event.pointerType || "mouse";
+    });
+    // Hover only for a real mouse: a tap also fires hover events, which used
+    // to open the pop-up just before the tap closed it again.
+    document.addEventListener("pointerover", (event) => {
+      if (event.pointerType !== "mouse") return;
+      const term = event.target.closest?.(".glossary-term");
+      if (term && term !== activeTerm) showTooltip(term);
+      else if (!term && activeTerm) hideTooltip();
+    });
+    // Tap a term to show its pop-up, tap it again (or anywhere else) to close.
+    document.addEventListener("click", (event) => {
+      const term = event.target.closest?.(".glossary-term");
+      if (term && (term !== activeTerm || lastPointerType === "mouse")) showTooltip(term);
+      else if (activeTerm) hideTooltip();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hideTooltip();
+    });
+    // Phones scroll slightly during a tap (the address bar moves), so keep the
+    // pop-up next to its word and close it only once the word is off screen.
+    const followTerm = () => {
+      if (!activeTerm) return;
+      const rect = activeTerm.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) hideTooltip();
+      else showTooltip(activeTerm);
+    };
+    window.addEventListener("scroll", followTerm, { passive: true });
+    window.addEventListener("resize", followTerm);
   }
 
   function isBlocked(node) {
@@ -92,7 +147,7 @@
       const term = document.createElement("span");
       term.className = "glossary-term";
       term.textContent = matchedText;
-      term.setAttribute("data-glossary-definition", GLOSSARY[matchedText.toLowerCase()]);
+      term.dataset.glossaryDefinition = GLOSSARY[matchedText.toLowerCase()];
       frag.appendChild(term);
 
       lastIndex = start + matchedText.length;
@@ -125,5 +180,6 @@
   document.addEventListener("DOMContentLoaded", () => {
     injectStyles();
     applyGlossary();
+    bindTooltipEvents();
   });
 })();

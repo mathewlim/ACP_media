@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ACP Media Companion | HTML5 ZIP-Media Compiler</title>
+  <link rel="icon" type="image/png" href="assets/banner.png" />
   <link rel="stylesheet" href="style.css" />
   <script defer src="jszip.min.js"></script>
   <script defer src="script.js"></script>
@@ -12,7 +13,7 @@
 <body>
   <main class="app">
     <header class="app-header">
-      <div class="overall-title-banner" aria-label="Banner image placeholder"><img src="assets/banner.png" alt="Banner image placeholder" /></div>
+      <div class="overall-title-banner"><img src="assets/banner.png" alt="ACP Media Companion" /></div>
       <div class="header-top">
         <div class="title-left-panel">
           <h1>HTML5 ZIP-Media Compiler</h1>
@@ -20,38 +21,38 @@
         <div class="header-actions">
           <a class="page-link-btn" href="index.html" title="Open Prompting ACP to Add Media.">Prompting ACP to Add Media</a>
           <a class="page-link-btn" href="guide-to-media-embedding.html" title="Open Guide to Media Embedding.">Guide to Media Embedding</a>
-          <a class="page-link-btn" href="instructions-using-ai-chatbot.html" title="To be released">*Guide to using AI Chatbot</a>
-          <button id="previewBtn" type="button" class="preview-prominent" title="Open a live preview in a new window using the current editor content. Uploaded media files are not loaded in preview.">Preview Interactive</button>
+          <a class="page-link-btn" href="instructions-using-ai-chatbot.html" title="Create an interactive with an AI chatbot and package it for SLS.">Guide to Using AI Chatbots</a>
+          <button id="previewBtn" type="button" class="preview-prominent" title="Open a live preview in a new window using the current code and your uploaded media files.">Preview Interactive</button>
         </div>
       </div>
       <details class="how-to-use">
-        <summary>How to Use Quick Guide</summary>
+        <summary>Quick guide</summary>
         <div class="workflow-map" role="tablist" aria-label="How to Use Steps">
           <button id="stepTab1" class="workflow-step is-active" type="button" role="tab" aria-selected="true" aria-controls="stepPanel1" data-step-target="stepPanel1">1. Add Base Code</button>
-          <span class="workflow-link" aria-hidden="true">?</span>
+          <span class="workflow-link" aria-hidden="true">→</span>
           <button id="stepTab2" class="workflow-step" type="button" role="tab" aria-selected="false" aria-controls="stepPanel2" data-step-target="stepPanel2">2. Add Media</button>
-          <span class="workflow-link" aria-hidden="true">?</span>
+          <span class="workflow-link" aria-hidden="true">→</span>
           <button id="stepTab3" class="workflow-step" type="button" role="tab" aria-selected="false" aria-controls="stepPanel3" data-step-target="stepPanel3">3. Generate ZIP</button>
         </div>
 
         <div class="workflow-panels">
           <section id="stepPanel1" class="workflow-panel is-active" role="tabpanel" aria-labelledby="stepTab1">
             <p class="how-to-use-intro">Choose one method:</p>
-            <p>A) Upload an ACP-generated ZIP.</p>
+            <p>A) Paste each code block into its matching editor.</p>
             <p>B) Upload <code>index.html</code>, <code>style.css</code>/<code>styles.css</code>, and <code>script.js</code> separately.</p>
-            <p>C) Paste specific code into editors.</p>
+            <p>C) Upload a project ZIP from ACP or your chatbot.</p>
             <p class="how-to-use-important">Important: Media paths must use the main folder filename only (for example, <code>image.png</code>).</p>
           </section>
 
           <section id="stepPanel2" class="workflow-panel" role="tabpanel" aria-labelledby="stepTab2" hidden>
             <p class="how-to-use-intro">Upload your media files.</p>
-            <p>Add images, audio, or video files with the upload button or drag-and-drop.</p>
+            <p>Add images, audio, or video files with the upload button or drag-and-drop. Uploading a file with the same name replaces the earlier copy.</p>
             <p>Filenames are case-sensitive. <code>Image.png</code> must match <code>Image.png</code> exactly.</p>
           </section>
 
           <section id="stepPanel3" class="workflow-panel" role="tabpanel" aria-labelledby="stepTab3" hidden>
             <p class="how-to-use-intro">Build your final project.</p>
-            <p>Click "Generate ZIP" to download the full project with all staged media files.</p>
+            <p>Click "Preview Interactive" to try it with your media, then click "Generate ZIP" to download the full project with all staged media files.</p>
           </section>
         </div>
       </details>
@@ -61,7 +62,7 @@
       <div class="section-header-row">
         <h2>Code Input</h2>
         <div class="controls-row">
-          <button id="uploadZipBtn" type="button" class="zip-prominent" title="Upload an ACP-generated project ZIP. The interactive imports index.html, style.css/styles.css, and script.js into editors, then stages all other files in the main folder.">Upload ACP Generated ZIP File</button>
+          <button id="uploadZipBtn" type="button" class="zip-prominent" title="Import a project ZIP from ACP or an AI chatbot, including its code and media.">Upload Project ZIP</button>
           <button id="clearCodeBtn" type="button" title="Clear all code in index.html, style.css, and script.js editors.">Clear Code</button>
         </div>
       </div>
@@ -111,14 +112,14 @@
         <input id="fileInput" type="file" multiple hidden />
         <input id="zipInput" type="file" accept=".zip,application/zip" hidden />
       </div>
-      <div id="dropZone" class="drop-zone" tabindex="0" aria-label="Drag and drop files">
-        Drag and drop media files here
+      <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Choose media files, or drag and drop them here">
+        Drag and drop media files here, or click to choose files
         <span>Supported media types: .jpg, .jpeg, .png, .gif, .webp, .svg, .mp3, .wav, .ogg, .m4a, .mp4, .webm, .mov.</span>
       </div>
 
       <div id="mediaNameChecker" class="asset-path-checker media-name-checker" aria-live="polite">
-        <h3>Media Files Name Checker</h3>
-        <p class="checker-note">Checks whether uploaded media filenames match filenames referenced in the uploaded codebase.</p>
+        <h3>Media Filename Checker</h3>
+        <p class="checker-note">Checks that uploaded media files match the names used in your code.</p>
         <div class="checker-grid">
           <div class="checker-box checker-box-error">
             <h4>Missing / Mismatch</h4>
@@ -133,7 +134,7 @@
             </ul>
           </div>
         </div>
-        <p class="checker-manual-note">Manual fix required: rename and reupload the media file, or fix the filename error highlighted in red in the codebase above.</p>
+        <p class="checker-manual-note">To fix a mismatch, rename and reupload the media file, or edit its filename in the code.</p>
       </div>
 
       <h3>Uploaded Files</h3>
@@ -145,12 +146,12 @@
     <section class="panel actions-panel">
       <div class="controls-row">
         <button id="generateBtn" type="button" class="primary generate-prominent" title="Build and download a ready-to-run ZIP containing index.html, style.css, script.js, and uploaded or imported media files in the main folder.">Generate ZIP</button>
-        <button id="resetBtn" type="button">Reset</button>
+        <button id="resetBtn" type="button" title="Clear all code and media files and start again.">Reset</button>
       </div>
       <p id="statusMessage" class="status" role="status" aria-live="polite"></p>
     </section>
   </main>
-  <footer class="page-credit">Created by Mathew Lim for the SLS Community</footer>
+  <footer class="page-credit">Created by Mathew Lim for the SLS Community<br />Updated <time datetime="2026-11-07">7 November 2026</time></footer>
 </body>
 </html>
 

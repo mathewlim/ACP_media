@@ -3,117 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ACP Media Companion | Guide to using AI Chatbot</title>
-  <script defer src="glossary-hover.js"></script>
-  <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #0a0f1f;
-      color: #e8eeff;
-      font-family: "Manrope", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .page-wrap {
-      flex: 1;
-      display: grid;
-      align-content: center;
-      gap: 1.1rem;
-      justify-items: center;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(2.2rem, 6vw, 5rem);
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      text-align: center;
-    }
-
-    .app-header {
-      width: min(1280px, 95vw);
-      margin: 0.7rem auto 0;
-    }
-
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.9rem;
-      flex-wrap: wrap;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      flex-wrap: wrap;
-    }
-
-    .page-link-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      border: 1px solid #6fbff0;
-      background: linear-gradient(180deg, #204a85, #173968);
-      color: #f5fbff;
-      padding: 0.62rem 0.95rem;
-      border-radius: 10px;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-      text-decoration: none;
-    }
-
-    .page-credit {
-      margin: 0;
-      padding: 0.9rem 1rem 1.2rem;
-      text-align: center;
-      color: #b9c8e7;
-      font-size: 0.88rem;
-    }
-
-    .overall-title-banner {
-      margin-top: 0.25rem;
-      width: 81%;
-      min-height: 27px;
-      margin-left: auto;
-      margin-right: auto;
-      border: none;
-      border-radius: 12px;
-      background: #0d1931;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .overall-title-banner img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      min-height: 27px;
-      object-fit: cover;
-    }
-  </style>
+  <meta name="description" content="Describe a learning activity, copy one AI prompt, then add your media and create a ZIP for SLS." />
+  <title>ACP Media Companion | Guide to Using AI Chatbots</title>
+  <link rel="icon" type="image/png" href="assets/banner.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="ai-chatbot-guide.css" />
+  <script defer src="ai-chatbot-guide.js"></script>
 </head>
-<body>
-  <header class="app-header">
-    <div class="overall-title-banner" aria-label="Banner image placeholder"><img src="assets/banner.png" alt="Banner image placeholder" /></div>
-    <div class="header-top">
-      <div class="header-actions">
-        <a class="page-link-btn" href="index.html" title="Open Prompting ACP to Add Media.">Prompting ACP to Add Media</a>
-        <a class="page-link-btn" href="media-compiler.html" title="Open HTML5 ZIP-Media Compiler.">HTML5 ZIP-Media Compiler</a>
-        <a class="page-link-btn" href="guide-to-media-embedding.html" title="Open Guide to Media Embedding.">Guide to Media Embedding</a>
+<body class="chatbot-guide-page">
+  <main class="app">
+    <header class="app-header">
+      <div class="overall-title-banner"><img src="assets/banner.png" alt="ACP Media Companion" /></div>
+      <div class="header-top">
+        <h1>Guide to Using AI Chatbots</h1>
+        <nav class="header-actions" aria-label="Other guides and tools">
+          <a class="page-link-btn" href="index.html">ACP prompts</a>
+          <a class="page-link-btn" href="guide-to-media-embedding.html">Media guide</a>
+          <a class="page-link-btn" href="media-compiler.html">ZIP compiler</a>
+        </nav>
       </div>
+    </header>
+
+    <div class="chatbot-intro">
+      <p class="chatbot-eyebrow">VIBE-CODE FOR SLS</p>
+      <h2>Create a learning interactive.</h2>
+      <p>Describe your idea. Copy one prompt into ChatGPT, Claude, Gemini, Pair Chat, or any other chatbot. Add your images, video and sound in the compiler.</p>
     </div>
-  </header>
-  <div class="page-wrap">
-    <h1>To be released</h1>
-  </div>
-  <footer class="page-credit">Created by Mathew Lim for the SLS Community</footer>
+
+    <nav class="chatbot-steps" aria-label="Guide sections">
+      <a href="#activity-brief"><span>1</span> Describe</a>
+      <a href="#starter-prompt"><span>2</span> Copy prompt</a>
+      <a href="#package"><span>3</span> Create ZIP</a>
+    </nav>
+
+    <section class="panel" id="activity-brief" aria-labelledby="briefTitle">
+      <div class="section-header-row">
+        <h2 id="briefTitle">1. Describe your activity</h2>
+        <button type="button" id="loadExample">Use a Primary English example</button>
+      </div>
+      <p class="chatbot-note">Fill in what you know. The chatbot can ask for anything missing.</p>
+      <form id="activityBrief" class="chatbot-form">
+        <div>
+          <label for="activityTopic">Subject and topic</label>
+          <input id="activityTopic" name="topic" placeholder="English — action words" maxlength="300" />
+        </div>
+        <div>
+          <label for="learnerLevel">Learner level</label>
+          <input id="learnerLevel" name="level" placeholder="Primary 2" maxlength="200" />
+        </div>
+        <div class="chatbot-full-width">
+          <label for="learningGoal">What should students learn?</label>
+          <textarea id="learningGoal" name="goal" rows="2" placeholder="Use sleeping and jumping in simple sentences." maxlength="2000"></textarea>
+        </div>
+        <div>
+          <label for="activityTypeSuggestions">Activity type</label>
+          <select id="activityTypeSuggestions" name="type" aria-describedby="activityTypeHelp">
+            <option value="">Choose an activity</option>
+            <option>Fill in the blanks (type an answer)</option>
+            <option>Quiz with feedback</option>
+            <option>Match words to pictures</option>
+            <option>Sort words into groups</option>
+            <option>Put sentences in order</option>
+            <option>Picture description (type a sentence)</option>
+            <option>Let the chatbot suggest an activity</option>
+            <option value="__custom__">Other — type my own activity</option>
+          </select>
+          <p class="chatbot-note" id="activityTypeHelp">Choose “Other” to enter your own.</p>
+          <div id="customActivityTypeField" hidden>
+            <label for="activityType">My preferred activity</label>
+            <input id="activityType" name="customType" placeholder="Describe your activity type" maxlength="300" disabled />
+          </div>
+        </div>
+        <div>
+          <label for="activityActions">What will students do?</label>
+          <textarea id="activityActions" name="actions" rows="3" placeholder="Look at the picture, watch the video, then type the missing word in The cat is ___." maxlength="2000"></textarea>
+        </div>
+        <div class="chatbot-full-width chatbot-media-field">
+          <label for="mediaPlan">Images, video and sound</label>
+          <textarea id="mediaPlan" name="media" rows="3" placeholder="sleeping-cat.jpg — show a cat sleeping&#10;jumping-cat.mp4 — play a video of a cat jumping&#10;meow.mp3 — play when Hear the cat is clicked" maxlength="4000" aria-describedby="mediaHelp"></textarea>
+          <p class="chatbot-note" id="mediaHelp">One file per line: exact filename + where it appears or plays. Add the actual files in Step 3.</p>
+        </div>
+        <details class="chatbot-full-width chatbot-extra">
+          <summary>Feedback for students (optional)</summary>
+          <label for="activityDetails">What should happen after an answer?</label>
+          <textarea id="activityDetails" name="details" rows="2" placeholder="Show Well done! if correct. Otherwise, give a hint and allow another try." maxlength="2000"></textarea>
+        </details>
+        <div class="chatbot-full-width chatbot-form-footer">
+          <button type="reset" class="chatbot-quiet">Clear details</button>
+          <p id="briefStatus" class="chatbot-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel chatbot-copy-panel" id="starter-prompt" aria-labelledby="promptTitle">
+      <h2 id="promptTitle">2. Copy your prompt</h2>
+      <p>Your activity and media instructions are combined in one prompt. Paste it into your chatbot to build the activity.</p>
+      <div class="chatbot-actions">
+        <button type="button" class="chatbot-primary" data-copy-target="starterMarkdown">Copy prompt</button>
+        <button type="button" id="downloadMarkdown">Download .md</button>
+      </div>
+      <p id="promptStatus" class="chatbot-status" role="status" aria-live="polite"></p>
+      <details id="promptDetails" class="chatbot-extra">
+        <summary>View the full Markdown prompt</summary>
+        <label class="chatbot-prompt-label" for="starterMarkdown">Your prompt</label>
+        <textarea class="chatbot-markdown" id="starterMarkdown" readonly spellcheck="false"># Build my learning interactive for SLS
+
+## Task
+Use my teacher brief to build the complete activity, including its media references. If the topic, learner level, student task and required media filenames are clear, build now. Ask only for missing essentials; do not request a separate plan approval. If I ask you to suggest an activity, choose a simple one suited to my goal.
+
+## Files
+Create these three complete project files:
+- index.html: page content; link to style.css and load script.js with defer.
+- style.css: responsive styling using system fonts.
+- script.js: student interactions, answer checking, feedback, retries and reset.
+
+Use plain HTML, CSS and JavaScript that work offline and within an SLS iframe. No frameworks, build tools, remote libraries, APIs, server, module imports or fetch-based loading. Use on-page messages instead of pop-up dialogs. Do not access the parent SLS page.
+
+## Media
+Keep all code and media files in the same main folder. Use only the exact filenames in my brief, preserving spaces, capital letters and extensions. Use relative filenames with no subfolders or remote links. URL-encode special filename characters when needed; do not rename the real files.
+
+Include the media references in this first version. I will add the actual media files in the compiler; do not wait for media uploads or generate substitute media. Ask for a filename if requested media has none.
+- Images: responsive img elements with meaningful alt text.
+- Video: a local player with controls and playsinline; include any supplied summary or transcript.
+- Audio: play after the specified user action, with playback/mute controls. No autoplay on page load.
+- Missing media: show a labelled fallback naming the expected file; keep the activity usable.
+- Reset: stop and rewind media and clear answers and feedback.
+
+Use supplied media descriptions. Mark missing text alternatives for teacher review rather than inventing what a file contains.
+
+## Student experience
+Use age-appropriate instructions, labelled controls, keyboard access and readable contrast. For typed answers, include a text box and Check answer button; handle blank answers and ignore extra spaces/case when appropriate. Follow my feedback instructions and allow retries. Fit small screens without horizontal scrolling.
+
+## Create and deliver the files
+Where possible, use your file-creation tools NOW to write index.html, style.css and script.js as actual files and attach EACH file for download in this response. Provide working download links or attachments, rather than only showing code or offering to create the files later. If supported, also attach a project ZIP with the three files at its root. Include complete, working code in every file.
+
+Only if file creation or file attachments are unavailable in this chat, briefly say so and provide each file's complete code in a separate, clearly labelled code block. Never claim to have created a file or provide a download link unless the file actually exists and is accessible to me.
+
+List the real media files I need to add. Explain how to upload the downloaded files or project ZIP into the compiler, add my media, and generate the final ZIP with index.html at its root. For the code-block fallback, explain how to paste each block into its matching editor. Report only checks you actually ran.</textarea>
+      </details>
+      <noscript><p>Enable JavaScript to combine your details and use the buttons, or copy the prompt above and add your details manually.</p></noscript>
+    </section>
+
+    <section class="panel" id="package" aria-labelledby="packageTitle">
+      <h2 id="packageTitle">3. Add media and create your ZIP</h2>
+      <ol class="chatbot-list">
+        <li>Open the compiler and upload the chatbot's three code files or project ZIP. If it could only provide code, paste each block into its matching editor: <code>index.html</code>, <code>style.css</code> or <code>script.js</code>, without the Markdown backticks.</li>
+        <li>Upload your media files with the exact names used in the code. Fix any filename or path errors.</li>
+        <li>Click <strong>Generate ZIP</strong>, then upload it in SLS under <strong>Text/Media → File from Device</strong>.</li>
+      </ol>
+      <a class="page-link-btn chatbot-primary" href="media-compiler.html">Open ZIP compiler →</a>
+    </section>
+  </main>
+  <footer class="page-credit">Created by Mathew Lim for the SLS Community<br />Updated <time datetime="2026-11-07">7 November 2026</time></footer>
 </body>
 </html>
-

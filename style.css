@@ -510,7 +510,7 @@ textarea {
 }
 
 #codeEditor {
-  min-height: 430px;
+  min-height: 0;
   position: absolute;
   inset: 0;
   background: transparent;
@@ -520,6 +520,7 @@ textarea {
   margin: 0;
   white-space: pre;
   overflow: auto;
+  resize: none;
 }
 
 #codeEditor.code-editor-error {
@@ -534,8 +535,12 @@ textarea {
 
 .code-editor-wrap {
   position: relative;
-  min-height: 430px;
+  height: 430px;
+  min-height: 200px;
   border-radius: 10px;
+  /* Drag the bottom-right corner to resize; both layers follow the frame. */
+  resize: vertical;
+  overflow: hidden;
 }
 
 .code-highlight-layer {
@@ -620,6 +625,18 @@ button.primary:hover {
   color: #c6d8ff;
   background: #0c1427;
   outline: none;
+  cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone:focus-visible {
+  border-color: var(--accent);
+  background: #111e37;
+}
+
+.drop-zone:focus-visible {
+  outline: 3px solid rgba(127, 214, 255, 0.7);
+  outline-offset: 3px;
 }
 
 .drop-zone span {
@@ -642,6 +659,22 @@ button.primary:hover {
 .file-list li {
   margin: 0.24rem 0;
   word-break: break-word;
+}
+
+.file-list-item > span {
+  margin-right: 0.6rem;
+}
+
+.file-remove-btn {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.82rem;
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.file-remove-btn:hover {
+  border-color: #ff6b7a;
+  color: #ffd4dc;
 }
 
 .muted {
@@ -809,6 +842,10 @@ button.primary:hover {
     width: 100%;
   }
 
+  .app-header h1 {
+    white-space: normal;
+  }
+
   .header-actions {
     width: 100%;
     flex-wrap: wrap;
@@ -901,6 +938,7 @@ button.primary:hover {
 }
 
 .acp-prompts-page h3 {
+  scroll-margin-top: 110px;
   color: #e7f2ff;
   font-size: 1.2rem;
   margin-top: 1.5rem;
@@ -1106,7 +1144,7 @@ button.primary:hover {
   color: #bad5ff;
   font-size: 0.84rem;
   line-height: 1.35;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .video-step-panel {

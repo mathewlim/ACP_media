@@ -69,10 +69,27 @@ Solution follows this order:
   - `index.html`
   - `style.css` or `styles.css`
   - `script.js`
-- Upload media files by button or drag-and-drop
+- Upload media files by button, by clicking the drop zone, or by drag-and-drop (files dropped elsewhere on the page are also added rather than opened by the browser)
+- Uploading a media file with an existing name replaces the earlier copy; each file can be removed individually
+- Recognises repeated browser downloads such as `script (1).js` as the matching code file
+- Skips hidden system files in ZIPs (`__MACOSX`, `.DS_Store`, `Thumbs.db`)
+- A new project ZIP replaces all three code files and keeps only previously uploaded media that the new project uses
+- Preview Interactive shows uploaded media, so images, sound and video can be checked before generating the ZIP
+- Asks before Reset or Clear, and warns before leaving the page with work that has not been downloaded
 - Main Folder Path Checker to flag incorrect media references
 - Media filename matching checks to detect mismatch errors
+- Recognises filenames with spaces, parentheses, Unicode characters and URL encoding
+- Prevents ZIP generation when index.html is empty, a linked code file is empty, or a detected media reference is missing or outside the main folder
+- Accepts styles.css on import and normalises its link to style.css on export
 - Generate a new ZIP file with HTML5 files and media in the main folder
+
+### 4) Vibe-coding with AI Chatbots
+
+- **Describe:** enter the learning goal, activity and media filenames, or use the Primary 2 English example. Choose an activity type or select “Other” to type your own. Feedback settings are optional.
+- **Copy:** one Markdown prompt combines the activity and media. Paste it into ChatGPT, Claude, DeepSeek or Gemini. It explicitly asks the chatbot to create and attach the three actual code files where supported, with complete code blocks as the fallback when file creation or attachments are unavailable. The full prompt is available under “View the full Markdown prompt” and as a `.md` download.
+- **Create ZIP:** upload the chatbot's three code files or project ZIP, add the actual media files, and generate the final ZIP for SLS. If the chatbot only supplies code blocks, paste them directly into the matching compiler editors.
+- The prompt asks the chatbot to build when the essentials are supplied, use exact filenames and create media references in the first version. Missing media files have labelled fallbacks.
+- Prompt generation runs locally. The guide needs no chatbot connection or special skill installation. Without JavaScript, the base prompt can be copied manually.
 
 ## Steps
 
@@ -111,7 +128,8 @@ Current guide-page media references include:
 
 Core files:
 
-- `index.html` - Main compiler application UI
+- `index.html` - Home page with ACP prompts and the AI chatbot guide entry point
+- `media-compiler.html` - Compiler application UI
 - `script.js` - App logic for uploads, path checks, ZIP generation, preview
 - `style.css` - Shared styling for all pages
 - `jszip.min.js` - ZIP handling library
@@ -119,11 +137,20 @@ Core files:
 
 Guidance pages:
 
-- `prompting-acp-to-add-media.html`
 - `prompting-acp-media.js`
 - `guide-to-media-embedding.html`
 - `guide-to-media-embedding.js`
 - `instructions-using-ai-chatbot.html`
+- `ai-chatbot-guide.js` - Personalised Markdown prompt, clipboard controls and Markdown download
+- `ai-chatbot-guide.css` - Responsive styles scoped to the AI chatbot guide
+
+## Tests
+
+Run from this folder with Node.js 18 or later:
+
+```
+node --test
+```
 
 ## Credits
 

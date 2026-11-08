@@ -3,6 +3,13 @@ const ALLOWED_MEDIA_EXTENSIONS = new Set([
 ]);
 const CORE_FILENAME_SET = new Set(['index.html', 'style.css', 'styles.css', 'script.js']);
 const CANONICAL_CORE_FILENAMES = new Set(['index.html', 'style.css', 'script.js']);
+const MEDIA_MIME_TYPES = {
+  mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', m4a: 'audio/mp4',
+  mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml'
+};
+// Preview links for uploaded media, created once per file.
+const previewUrlCache = new WeakMap();
 
 const state = {
   files: [],
@@ -12,6 +19,8 @@ const state = {
     'script.js': ''
   },
   activeCodeFile: 'index.html',
+  // True when there is work that has not been downloaded as a ZIP yet.
+  hasUnsavedChanges: false,
   pathPromptShown: {
     'index.html': false,
     'style.css': false,
@@ -53,7 +62,8 @@ uploadCodeBtn.addEventListener('click', () => codeFileInput.click());
 codeFileSelect.addEventListener('change', handleEditorFileChange);
 codeEditor.addEventListener('input', () => {
   syncEditorToState();
-  updateAssetPathChecker();
+  state.hasUnsavedChanges = true;
+  updateAssetPathChecker({ showAlert: false });
 });
 codeEditor.addEventListener('scroll', syncCodeOverlayScroll);
 codeFileInput.addEventListener('change', async (event) => {
@@ -62,6 +72,18 @@ codeFileInput.addEventListener('change', async (event) => {
 });
 fileInput.addEventListener('change', async (event) => {
   await addFiles(event.target.files);
+});
+fileList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-remove-file]');
+  if (button) {
+    removeMediaFile(button.dataset.removeFile);
+  }
+});
+window.addEventListener('beforeunload', (event) => {
+  if (state.hasUnsavedChanges && hasProjectContent()) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
 });
 zipInput.addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
@@ -85,6 +107,38 @@ updateAssetPathChecker();
 
 function setMediaInputAccept() {
   fileInput.accept = Array.from(ALLOWED_MEDIA_EXTENSIONS).map((ext) => `.${ext}`).join(',');
+}
+
+// Browsers save repeated downloads as "script (1).js"; treat those as the core file.
+function getCoreFilename(filename) {
+  const lower = (filename || '').toLowerCase().replace(/\s\(\d+\)(?=\.[a-z]+$)/, '');
+  return CORE_FILENAME_SET.has(lower) ? lower : '';
+}
+
+function getMediaMimeType(filename) {
+  return MEDIA_MIME_TYPES[getFileExtension(filename)] || '';
+}
+
+// Hidden system files that zip tools add (macOS __MACOSX, .DS_Store, Thumbs.db).
+function isSystemZipEntry(path) {
+  const parts = path.split(/[\\/]/).filter(Boolean);
+  const base = parts[parts.length - 1] || '';
+  return parts.includes('__MACOSX') || base.startsWith('.') || /^(?:thumbs\.db|desktop\.ini)$/i.test(base);
+}
+
+function hasProjectContent() {
+  return state.files.length > 0 || Object.values(state.code).some((content) => content.trim().length > 0);
+}
+
+// Adds a media file; a file with the same name replaces the earlier copy.
+function stageMediaFile(file) {
+  const index = state.files.findIndex((item) => item.name === file.name);
+  if (index >= 0) {
+    state.files[index] = file;
+    return 'replaced';
+  }
+  state.files.push(file);
+  return 'added';
 }
 
 function getSelectedCodeFile() {
@@ -161,6 +215,7 @@ async function loadSingleCodeInput(file, targetName) {
 
   const loaded = await loadCodeFile(file, targetName);
   if (loaded) {
+    state.hasUnsavedChanges = true;
     setStatus(`${targetName} loaded.`, 'success');
   } else {
     setStatus(`Could not load ${targetName}.`, 'error');
@@ -186,12 +241,33 @@ function setupDropZone() {
     await addFiles(event.dataTransfer.files);
   });
 
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  // Files dropped anywhere else on the page would make the browser open them
+  // and lose the teacher's work, so handle them like a drop-zone drop.
+  window.addEventListener('dragover', (event) => {
+    if (isFileDrag(event) && !dropZone.contains(event.target)) {
+      event.preventDefault();
+    }
+  });
+  window.addEventListener('drop', async (event) => {
+    if (!isFileDrag(event) || dropZone.contains(event.target)) {
+      return;
+    }
+    event.preventDefault();
+    await addFiles(event.dataTransfer.files);
+  });
+
   dropZone.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       fileInput.click();
     }
   });
+}
+
+function isFileDrag(event) {
+  return Array.from(event.dataTransfer?.types || []).includes('Files');
 }
 
 async function addFiles(fileCollection) {
@@ -202,12 +278,13 @@ async function addFiles(fileCollection) {
   const incomingFiles = Array.from(fileCollection);
   let loadedCodeCount = 0;
   let addedMediaCount = 0;
+  let replacedMediaCount = 0;
   let importedZipCount = 0;
   const rejected = [];
 
   for (const file of incomingFiles) {
     const extension = getFileExtension(file.name);
-    const lowerName = file.name.toLowerCase();
+    const coreName = getCoreFilename(file.name);
 
     if (extension === 'zip') {
       const imported = await importProjectZip(file, true);
@@ -219,8 +296,8 @@ async function addFiles(fileCollection) {
       continue;
     }
 
-    if (CORE_FILENAME_SET.has(lowerName)) {
-      const loaded = await loadCodeFile(file, lowerName);
+    if (coreName) {
+      const loaded = await loadCodeFile(file, coreName);
       if (loaded) {
         loadedCodeCount += 1;
       } else {
@@ -234,22 +311,27 @@ async function addFiles(fileCollection) {
       continue;
     }
 
-    const uniqueName = getUniqueFilename(file.name, state.files.map((item) => item.name));
-    const fileToStore = uniqueName === file.name
-      ? file
-      : new File([file], uniqueName, { type: file.type, lastModified: file.lastModified });
-
-    state.files.push(fileToStore);
-    addedMediaCount += 1;
+    if (stageMediaFile(file) === 'replaced') {
+      replacedMediaCount += 1;
+    } else {
+      addedMediaCount += 1;
+    }
   }
 
+  if (loadedCodeCount + addedMediaCount + replacedMediaCount + importedZipCount > 0) {
+    state.hasUnsavedChanges = true;
+  }
   renderFileList();
   updateAssetPathChecker();
-  setStatus(buildUploadStatusMessage(loadedCodeCount, addedMediaCount, importedZipCount, rejected.length), rejected.length > 0 ? 'error' : 'success');
+  setStatus(
+    buildUploadStatusMessage(loadedCodeCount, addedMediaCount, importedZipCount, rejected, replacedMediaCount),
+    rejected.length > 0 ? 'error' : 'success'
+  );
   fileInput.value = '';
 }
 
-function buildUploadStatusMessage(codeCount, mediaCount, zipCount, rejectedCount) {
+function buildUploadStatusMessage(codeCount, mediaCount, zipCount, rejectedNames, replacedCount = 0) {
+  const rejectedCount = rejectedNames.length;
   const parts = [];
   if (codeCount > 0) {
     parts.push(`${codeCount} code file(s) loaded`);
@@ -257,11 +339,16 @@ function buildUploadStatusMessage(codeCount, mediaCount, zipCount, rejectedCount
   if (mediaCount > 0) {
     parts.push(`${mediaCount} media file(s) added`);
   }
+  if (replacedCount > 0) {
+    parts.push(`${replacedCount} media file(s) replaced with the new upload`);
+  }
   if (zipCount > 0) {
     parts.push(`${zipCount} ZIP file(s) imported`);
   }
   if (rejectedCount > 0) {
-    parts.push(`${rejectedCount} unsupported file(s) skipped`);
+    const shown = rejectedNames.slice(0, 3).join(', ');
+    const more = rejectedCount > 3 ? ` and ${rejectedCount - 3} more` : '';
+    parts.push(`${rejectedCount} file(s) skipped because they are not supported or could not be read (${shown}${more})`);
   }
   return parts.length > 0 ? `${parts.join(', ')}.` : 'No supported files were uploaded.';
 }
@@ -308,7 +395,7 @@ async function importProjectZip(file, isSilent = false) {
 
   try {
     const zip = await JSZip.loadAsync(file);
-    const allEntries = Object.values(zip.files).filter((entry) => !entry.dir);
+    const allEntries = Object.values(zip.files).filter((entry) => !entry.dir && !isSystemZipEntry(entry.name));
     if (allEntries.length === 0) {
       if (!isSilent) {
         setStatus('ZIP import failed: no files found inside the archive.', 'error');
@@ -318,8 +405,8 @@ async function importProjectZip(file, isSilent = false) {
 
     const byCoreFile = new Map();
     for (const entry of allEntries) {
-      const basename = getBasename(entry.name).toLowerCase();
-      if (!CORE_FILENAME_SET.has(basename)) {
+      const basename = getCoreFilename(getBasename(entry.name));
+      if (!basename) {
         continue;
       }
       const canonicalName = basename === 'styles.css' ? 'style.css' : basename;
@@ -337,17 +424,14 @@ async function importProjectZip(file, isSilent = false) {
     const cssEntry = byCoreFile.get('style.css');
     const jsEntry = byCoreFile.get('script.js');
 
-    if (htmlEntry) {
-      state.code['index.html'] = await htmlEntry.async('string');
-      loadedCodeCount += 1;
-    }
-    if (cssEntry) {
-      state.code['style.css'] = await cssEntry.async('string');
-      loadedCodeCount += 1;
-    }
-    if (jsEntry) {
-      state.code['script.js'] = await jsEntry.async('string');
-      loadedCodeCount += 1;
+    const isProjectZip = Boolean(htmlEntry || cssEntry || jsEntry);
+    if (isProjectZip) {
+      // A project ZIP replaces all three files, so code from an earlier project is not mixed in.
+      state.code['index.html'] = htmlEntry ? await htmlEntry.async('string') : '';
+      state.code['style.css'] = cssEntry ? await cssEntry.async('string') : '';
+      state.code['script.js'] = jsEntry ? await jsEntry.async('string') : '';
+      loadedCodeCount = [htmlEntry, cssEntry, jsEntry].filter(Boolean).length;
+      state.pathPromptShown = { 'index.html': false, 'style.css': false, 'script.js': false };
     }
     renderEditorForSelectedFile();
 
@@ -358,21 +442,31 @@ async function importProjectZip(file, isSilent = false) {
       if (!baseName) {
         continue;
       }
-      if (CORE_FILENAME_SET.has(baseName.toLowerCase())) {
+      if (getCoreFilename(baseName)) {
         continue;
       }
 
       const blob = await entry.async('blob');
       const uniqueName = getUniqueFilename(baseName, importedAssets.map((item) => item.name));
-      importedAssets.push(new File([blob], uniqueName, { type: blob.type }));
+      importedAssets.push(new File([blob], uniqueName, { type: blob.type || getMediaMimeType(uniqueName) }));
     }
 
-    state.files = importedAssets;
+    let keptCount = 0;
+    if (isProjectZip) {
+      // Keep media uploaded earlier only if this project uses it; drop the rest
+      // so files from a previous project do not end up in the new ZIP.
+      const referenced = new Set(collectMediaReferencesByFile().map((item) => getReferenceFilename(item.snippet)));
+      state.files = state.files.filter((item) => referenced.has(item.name));
+      keptCount = state.files.filter((item) => !importedAssets.some((asset) => asset.name === item.name)).length;
+    }
+    importedAssets.forEach(stageMediaFile);
+    state.hasUnsavedChanges = true;
     renderFileList();
     updateAssetPathChecker();
 
     if (!isSilent) {
-      setStatus(`ZIP imported: ${loadedCodeCount} code file(s) loaded and ${importedAssets.length} media file(s) staged in the main folder.`, 'success');
+      const kept = keptCount > 0 ? ` ${keptCount} media file(s) you uploaded earlier were kept.` : '';
+      setStatus(`ZIP imported: ${loadedCodeCount} code file(s) loaded and ${importedAssets.length} media file(s) staged in the main folder.${kept}`, 'success');
     }
     return true;
   } catch (error) {
@@ -423,11 +517,32 @@ function renderFileList() {
   const fragment = document.createDocumentFragment();
   for (const file of state.files) {
     const li = document.createElement('li');
-    li.textContent = `${file.name} (${formatFileSize(file.size)})`;
+    li.className = 'file-list-item';
+    const label = document.createElement('span');
+    label.textContent = `${file.name} (${formatFileSize(file.size)})`;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'file-remove-btn';
+    remove.dataset.removeFile = file.name;
+    remove.textContent = 'Remove';
+    remove.setAttribute('aria-label', `Remove ${file.name}`);
+    li.append(label, remove);
     fragment.appendChild(li);
   }
 
   fileList.appendChild(fragment);
+}
+
+function removeMediaFile(name) {
+  const before = state.files.length;
+  state.files = state.files.filter((file) => file.name !== name);
+  if (state.files.length === before) {
+    return;
+  }
+  state.hasUnsavedChanges = true;
+  renderFileList();
+  updateAssetPathChecker();
+  setStatus(`Removed ${name}.`, 'success');
 }
 
 function formatFileSize(sizeInBytes) {
@@ -441,17 +556,25 @@ function formatFileSize(sizeInBytes) {
 }
 
 async function generateZip() {
+  if (generateBtn.disabled) return;
   if (typeof JSZip === 'undefined') {
     setStatus('ZIP library failed to load. Check your local jszip.min.js file and reload.', 'error');
     return;
   }
 
+  syncEditorToState();
+  const errors = getPackagingErrors();
+  if (errors.length > 0) {
+    setStatus(errors.join(' '), 'error');
+    return;
+  }
+
+  generateBtn.disabled = true;
   setStatus('Generating ZIP...', '');
 
   try {
     const zip = new JSZip();
 
-    syncEditorToState();
     const htmlRaw = state.code['index.html'];
     const cssRaw = state.code['style.css'];
     const jsRaw = state.code['script.js'];
@@ -467,11 +590,45 @@ async function generateZip() {
 
     const blob = await zip.generateAsync({ type: 'blob' });
     triggerDownload(blob, 'my-project.zip');
+    state.hasUnsavedChanges = false;
     setStatus('ZIP generated and download started.', 'success');
   } catch (error) {
     console.error(error);
     setStatus(`Failed to generate ZIP: ${error.message}`, 'error');
+  } finally {
+    generateBtn.disabled = false;
   }
+}
+
+function getPackagingErrors() {
+  const errors = [];
+  const html = state.code['index.html'] || '';
+  if (!html.trim()) {
+    return ['Add your index.html code before generating the ZIP.'];
+  }
+
+  for (const [name, content] of Object.entries(state.code)) {
+    if (content.trim().startsWith('```')) {
+      errors.push(`Paste only the code into ${name}, without the Markdown backticks.`);
+    }
+  }
+  if (/<link\b[^>]*\bhref\s*=\s*["'](?:\.\/)?styles?\.css(?:[?#][^"']*)?["']/i.test(html) && !state.code['style.css'].trim()) {
+    errors.push('Add the style.css code referenced by index.html.');
+  }
+  if (/<script\b[^>]*\bsrc\s*=\s*["'](?:\.\/)?script\.js(?:[?#][^"']*)?["']/i.test(html) && !state.code['script.js'].trim()) {
+    errors.push('Add the script.js code referenced by index.html.');
+  }
+
+  const uploadedNames = new Set(state.files.map((file) => file.name));
+  const references = new Set(collectMediaReferencesByFile().map((entry) => entry.snippet));
+  for (const reference of references) {
+    if (!isMainFolderMediaReference(reference)) {
+      errors.push(`Use a main-folder filename for "${reference}".`);
+    } else if (!uploadedNames.has(getReferenceFilename(reference))) {
+      errors.push(`Upload "${getReferenceFilename(reference)}" or correct its filename in the code.`);
+    }
+  }
+  return errors;
 }
 
 function previewProject() {
@@ -481,13 +638,54 @@ function previewProject() {
     const cssRaw = state.code['style.css'] || '';
     const jsRaw = state.code['script.js'] || '';
 
-    const previewDocument = createPreviewDocument(htmlRaw, cssRaw, jsRaw);
+    const mediaUrls = getPreviewMediaUrls();
+    const previewDocument = createPreviewDocument(
+      replaceMediaReferences(htmlRaw, mediaUrls),
+      replaceMediaReferences(cssRaw, mediaUrls),
+      replaceMediaReferences(jsRaw, mediaUrls)
+    );
     openPreviewWindow(previewDocument);
-    setStatus('', '');
+    const mediaNote = state.files.length > 0
+      ? ` Uploaded media is included; filenames built by code (for example 'cat' + n + '.jpg') will only work in the final ZIP.`
+      : ' Upload media files to see them in the preview.';
+    setStatus(`Preview opened in a new window.${mediaNote}`, 'success');
   } catch (error) {
     console.error(error);
     setStatus(`Preview failed: ${error.message}`, 'error');
   }
+}
+
+function getPreviewMediaUrls() {
+  const urls = new Map();
+  state.files.forEach((file) => {
+    if (!previewUrlCache.has(file)) {
+      previewUrlCache.set(file, URL.createObjectURL(file));
+    }
+    urls.set(file.name, previewUrlCache.get(file));
+  });
+  return urls;
+}
+
+// Swap main-folder media references for preview URLs, using the same
+// detection as the checker so only real references are changed.
+function replaceMediaReferences(text, urlMap) {
+  if (!text || urlMap.size === 0) {
+    return text || '';
+  }
+  let cursor = 0;
+  let output = '';
+  for (const match of getMediaReferenceMatches(text)) {
+    if (match.start < cursor || !isMainFolderMediaReference(match.snippet)) {
+      continue;
+    }
+    const url = urlMap.get(getReferenceFilename(match.snippet));
+    if (!url) {
+      continue;
+    }
+    output += text.slice(cursor, match.start) + url;
+    cursor = match.end;
+  }
+  return output + text.slice(cursor);
 }
 
 function ensureRequiredLinks(html) {
@@ -505,6 +703,8 @@ function ensureRequiredLinks(html) {
   ].join('\n');
 
   let finalHtml = html && html.trim().length > 0 ? html : defaultHtml;
+  // ZIP imports accept styles.css, but the compiler writes the canonical style.css.
+  finalHtml = finalHtml.replace(/(<link\b[^>]*\bhref\s*=\s*["'])(?:\.\/)?styles\.css(?=[?#"'])/gi, '$1style.css');
 
   const hasCssLink = /<link\b[^>]*href\s*=\s*['"][^'"]*style\.css(?:[?#][^'"]*)?['"][^>]*>/i.test(finalHtml);
   const hasJsScript = /<script\b[^>]*src\s*=\s*['"][^'"]*script\.js(?:[?#][^'"]*)?['"][^>]*>\s*<\/script>/i.test(finalHtml);
@@ -579,10 +779,18 @@ function triggerDownload(blob, filename) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(url);
+  // Revoking immediately can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+function confirmDiscard(message) {
+  return typeof window === 'undefined' || typeof window.confirm !== 'function' || window.confirm(message);
 }
 
 function resetAll() {
+  if (hasProjectContent() && !confirmDiscard('Reset the compiler? All code and uploaded media files will be cleared.')) {
+    return;
+  }
   state.code['index.html'] = '';
   state.code['style.css'] = '';
   state.code['script.js'] = '';
@@ -591,12 +799,17 @@ function resetAll() {
   zipInput.value = '';
   codeFileInput.value = '';
   state.files = [];
+  state.hasUnsavedChanges = false;
+  state.pathPromptShown = { 'index.html': false, 'style.css': false, 'script.js': false };
   renderFileList();
   updateAssetPathChecker();
   setStatus('Form reset.', 'success');
 }
 
 function clearMediaFiles() {
+  if (state.files.length > 0 && !confirmDiscard(`Remove all ${state.files.length} uploaded media file(s)?`)) {
+    return;
+  }
   state.files = [];
   fileInput.value = '';
   renderFileList();
@@ -605,6 +818,10 @@ function clearMediaFiles() {
 }
 
 function clearCodeFiles() {
+  const hasCode = Object.values(state.code).some((content) => content.trim().length > 0);
+  if (hasCode && !confirmDiscard('Clear the code in index.html, style.css and script.js?')) {
+    return;
+  }
   state.code['index.html'] = '';
   state.code['style.css'] = '';
   state.code['script.js'] = '';
@@ -621,7 +838,8 @@ function setStatus(message, type) {
   }
 }
 
-function updateAssetPathChecker() {
+// showAlert is false while typing, so the pop-up only appears when code is loaded.
+function updateAssetPathChecker({ showAlert = true } = {}) {
   if (!pathSnippetList || !pathErrorList) {
     return;
   }
@@ -678,7 +896,7 @@ function updateAssetPathChecker() {
 
   if (selectedInvalidSnippets.length === 0) {
     state.pathPromptShown[selectedFile] = false;
-  } else if (!state.pathPromptShown[selectedFile]) {
+  } else if (showAlert && !state.pathPromptShown[selectedFile]) {
     state.pathPromptShown[selectedFile] = true;
     const snippetPreview = selectedInvalidSnippets.slice(0, 3).join(', ');
     window.alert(
@@ -690,7 +908,7 @@ function updateAssetPathChecker() {
 }
 
 function getReferenceFilename(reference) {
-  const rawPath = stripMediaQueryAndHash(reference).trim();
+  const rawPath = getDecodedMediaPath(reference);
   if (!rawPath) {
     return '';
   }
@@ -762,7 +980,7 @@ function updateMediaNameChecker() {
   mediaNameMatchList.innerHTML = '';
 
   if (referencedNames.length === 0) {
-    mediaNameErrorList.innerHTML = '<li class="muted">No media filenames detected in code base.</li>';
+    mediaNameErrorList.innerHTML = '<li class="muted">No media filenames detected in the code.</li>';
     mediaNameMatchList.innerHTML = '<li class="muted">No matches to show.</li>';
     mediaNameErrorBox?.classList.remove('has-errors');
     return;
@@ -797,7 +1015,7 @@ function updateMediaNameChecker() {
   const referencedSet = new Set(referencedNames);
   const extraUploaded = uploadedNames.filter((name) => !referencedSet.has(name));
 
-  if (missing.length === 0 && caseMismatch.length === 0 && extraUploaded.length === 0) {
+  if (missing.length === 0 && caseMismatch.length === 0) {
     mediaNameErrorList.innerHTML = '<li class="muted">No filename mismatch detected.</li>';
     mediaNameErrorBox?.classList.remove('has-errors');
   } else {
@@ -818,15 +1036,15 @@ function updateMediaNameChecker() {
       fragment.appendChild(li);
     });
 
-    extraUploaded.forEach((name) => {
-      const li = document.createElement('li');
-      li.className = 'path-error-text';
-      li.innerHTML = `<code>${escapeHtml(name)}</code> is uploaded but not referenced in code.`;
-      fragment.appendChild(li);
-    });
-
     mediaNameErrorList.appendChild(fragment);
   }
+
+  extraUploaded.forEach((name) => {
+    const li = document.createElement('li');
+    li.className = 'muted';
+    li.innerHTML = `<code>${escapeHtml(name)}</code> is included in the ZIP but not referenced in the code.`;
+    mediaNameErrorList.appendChild(li);
+  });
 
   if (matched.length === 0) {
     mediaNameMatchList.innerHTML = '<li class="muted">No matching filenames yet.</li>';
@@ -845,8 +1063,17 @@ function stripMediaQueryAndHash(value) {
   return value.split(/[?#]/, 1)[0] || '';
 }
 
+function getDecodedMediaPath(reference) {
+  const path = stripMediaQueryAndHash(reference).trim();
+  try {
+    return decodeURIComponent(path);
+  } catch (_error) {
+    return path;
+  }
+}
+
 function isMainFolderMediaReference(reference) {
-  const rawPath = stripMediaQueryAndHash(reference).trim();
+  const rawPath = getDecodedMediaPath(reference);
   if (!rawPath) {
     return false;
   }
@@ -855,21 +1082,76 @@ function isMainFolderMediaReference(reference) {
     .replace(/^\.\/+/, '')
     .replace(/^\.\\+/, '');
 
-  return normalized.length > 0 && !normalized.includes('/') && !normalized.includes('\\');
+  return normalized.length > 0 && !/[\\/<>:"|?*\u0000-\u001f]/.test(normalized);
+}
+
+function getMediaReferenceMatches(text) {
+  const results = [];
+  const comments = [];
+  const extension = /[^\\/]\.(?:jpg|jpeg|png|gif|webp|svg|mp3|wav|ogg|m4a|mp4|webm|mov)(?:[?#][^\r\n]*)?$/i;
+
+  function add(raw, start, contextStart = start) {
+    if (comments.some(([from, to]) => contextStart >= from && contextStart < to)) return;
+    const trimmed = raw.trim();
+    const snippet = trimmed
+      .replace(/\\(["'`\\ ()])/g, '$1')
+      .replace(/&(?:amp|apos|quot|lt|gt|#\d+|#x[\da-f]+);/gi, (entity) => {
+        const named = { '&amp;': '&', '&apos;': "'", '&quot;': '"', '&lt;': '<', '&gt;': '>' };
+        if (named[entity.toLowerCase()]) return named[entity.toLowerCase()];
+        const hex = /^&#x/i.test(entity);
+        const point = parseInt(entity.slice(hex ? 3 : 2, -1), hex ? 16 : 10);
+        return point <= 0x10ffff ? String.fromCodePoint(point) : entity;
+      });
+    if (!extension.test(snippet) || /[\r\n<>{}]|:\s/.test(snippet)) return;
+    const offset = start + raw.length - raw.trimStart().length;
+    results.push({ snippet, start: offset, end: offset + trimmed.length });
+  }
+
+  // Read complete quoted filenames, rather than breaking at spaces or brackets.
+  // Consume comments and non-media strings so filenames in messages are not errors.
+  const tokens = /<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\r\n]*|(["'`])((?:\\[\s\S]|(?!\1)[^\\\r\n])*)\1/g;
+  for (const match of text.matchAll(tokens)) {
+    if (!match[1]) {
+      comments.push([match.index, match.index + match[0].length]);
+      continue;
+    }
+    const preceding = text.slice(Math.max(0, match.index - 100), match.index);
+    if (/(?:textContent|innerText|innerHTML|alt|title|srcset|message|description|hint|feedback)\s*(?:=|:)\s*$/i.test(preceding)) continue;
+    add(match[2], match.index + 1);
+  }
+
+  const attributes = /\b(?:src|poster|href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
+  for (const match of text.matchAll(attributes)) {
+    const raw = match[1] ?? match[2] ?? match[3];
+    add(raw, match.index + match[0].indexOf(raw, match[0].indexOf('=') + 1), match.index);
+  }
+
+  const sourceSets = /\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+  for (const match of text.matchAll(sourceSets)) {
+    const raw = match[1] ?? match[2];
+    const start = match.index + match[0].indexOf(raw, match[0].indexOf('=') + 1);
+    for (const entry of raw.matchAll(/(?:^|,)\s*([^,\s]+)(?:\s+[^,]*)?/g)) {
+      add(entry[1], start + entry.index + entry[0].indexOf(entry[1]), match.index);
+    }
+  }
+
+  const urls = /\burl\(\s*(?:"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|((?:\\.|[^\s)\\])+))\s*\)/gi;
+  for (const match of text.matchAll(urls)) {
+    const raw = match[1] ?? match[2] ?? match[3];
+    add(raw, match.index + match[0].indexOf(raw), match.index);
+  }
+
+  const seen = new Set();
+  return results.sort((a, b) => a.start - b.start).filter((match) => {
+    const key = `${match.start}:${match.end}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function extractMediaReferences(text) {
-  const matches = text.match(/\b[\w./-]+\.(?:jpg|jpeg|png|gif|webp|svg|mp3|wav|ogg|m4a|mp4|webm|mov)(?:[?#][^\s"'`)\]}<>]*)?/gi) || [];
-  const unique = new Set();
-
-  matches.forEach((raw) => {
-    const cleaned = raw.replace(/[.,;:!?]+$/g, '');
-    if (cleaned) {
-      unique.add(cleaned);
-    }
-  });
-
-  return Array.from(unique);
+  return Array.from(new Set(getMediaReferenceMatches(text).map((match) => match.snippet)));
 }
 
 function collectMediaReferencesByFile() {
@@ -901,31 +1183,31 @@ function renderCodeHighlights() {
   }
 
   const source = state.code[getSelectedCodeFile()] || '';
-  const regex = /\b[\w./-]+\.(?:jpg|jpeg|png|gif|webp|svg|mp3|wav|ogg|m4a|mp4|webm|mov)(?:[?#][^\s"'`)\]}<>]*)?/gi;
   const mismatchSnippetSet = new Set(getMismatchedMediaSnippets(extractMediaReferences(source)));
   let cursor = 0;
   let html = '';
-  let match = regex.exec(source);
-
-  while (match) {
-    const token = match[0];
-    const start = match.index;
-    const end = start + token.length;
+  for (const match of getMediaReferenceMatches(source)) {
+    const { snippet: token, start, end } = match;
+    if (start < cursor) continue;
+    const originalToken = source.slice(start, end);
 
     html += escapeHtml(source.slice(cursor, start));
     const hasPathError = !isMainFolderMediaReference(token);
     const hasNameMismatch = mismatchSnippetSet.has(token);
     if (hasPathError || hasNameMismatch) {
-      html += `<span class="invalid-ref">${escapeHtml(token)}</span>`;
+      html += `<span class="invalid-ref">${escapeHtml(originalToken)}</span>`;
     } else {
-      html += escapeHtml(token);
+      html += escapeHtml(originalToken);
     }
 
     cursor = end;
-    match = regex.exec(source);
   }
 
   html += escapeHtml(source.slice(cursor));
+  // A <pre> drops a final empty line, which would misalign it with the textarea.
+  if (source.endsWith('\n')) {
+    html += ' ';
+  }
   codeHighlightLayer.innerHTML = html.length > 0 ? html : ' ';
 }
 
